@@ -20,7 +20,7 @@ func NewNote(title string, content string) *Note {
 
 func (n *Note) AddLink(targetID string) error {
 	// If note id not found return error
-	if !slices.Contains(n.Links, targetID) {
+	if slices.Contains(n.Links, targetID) {
 		return errors.New("link already present")
 	}
 	n.Links = append(n.Links, targetID)
@@ -29,6 +29,11 @@ func (n *Note) AddLink(targetID string) error {
 
 func (n *Note) RemoveLink(targetID string) error {
 	// If note id not found in n.Links list return error else remove
+	index := slices.Index(n.Links, targetID)
+	if index == -1 {
+		return errors.New(targetID + "link not found")
+	}
+	n.Links = slices.Delete(n.Links, index, index)
 	return nil
 }
 
@@ -50,12 +55,13 @@ func (n *Note) RemoveTag(tagList string) error {
 	tags := strings.Split(strings.ToLower(tagList), ",")
 	indexes := []int{}
 	for _, tag := range tags {
+		index := slices.Index(n.Tags, strings.ToLower(tag))
+		if index == -1 {
+			return errors.New(tag + "tag not found")
+		}
 		indexes = append(indexes, slices.Index(n.Tags, strings.ToLower(tag)))
 	}
 
-	if slices.Contains(indexes, -1) {
-		return errors.New(tags[slices.Index(indexes, -1)] + "tag not found")
-	}
 	for _, index := range indexes {
 		n.Tags = slices.Delete(n.Tags, index, index)
 	}

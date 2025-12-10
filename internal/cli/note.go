@@ -46,36 +46,6 @@ func (noteCmd *NoteCommand) Run(args []string) error {
 			return err
 		}
 	case "delete":
-		switch noteArgs[0] {
-		case "tag":
-			if len(noteArgs[1:]) < 2 {
-				return errors.New("missing operand")
-			}
-			noteData, err := noteCmd.store.Load(noteArgs[1])
-			if err != nil {
-				return err
-			}
-			if err := noteData.RemoveTag(noteArgs[2]); err != nil {
-				return err
-			}
-			if err := noteCmd.store.Save(noteData); err != nil {
-				return err
-			}
-		case "link":
-			if len(noteArgs[1:]) < 2 {
-				return errors.New("missing operand")
-			}
-			noteData, err := noteCmd.store.Load(noteArgs[1])
-			if err != nil {
-				return err
-			}
-			if err := noteData.RemoveLink(noteArgs[2]); err != nil {
-				return err
-			}
-			if err := noteCmd.store.Save(noteData); err != nil {
-				return err
-			}
-		}
 		if err := noteCmd.store.Delete(noteArgs[0]); err != nil {
 			return err
 		}

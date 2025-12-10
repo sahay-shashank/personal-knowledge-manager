@@ -36,12 +36,13 @@ func (fileStore *Store) Load(noteLocation string) (*Note, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !bytes.Contains(fileData, []byte("PKM\n")) {
+
+	if !bytes.Equal(fileData[:4], []byte("PKM\n")) {
 		return nil, errors.New("note corrupted")
 	}
 
 	note := Note{}
-	if err := json.Unmarshal(fileData, &note); err != nil {
+	if err := json.Unmarshal(fileData[4:], &note); err != nil {
 		return nil, err
 	}
 	return &note, nil
