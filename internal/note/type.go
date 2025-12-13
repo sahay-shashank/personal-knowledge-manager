@@ -16,3 +16,8 @@ type Note struct {
 type Store struct {
 	StoreLocation string
 }
+
+type Index struct {
+	TagIndex     map[string][]string `json:"tags"`
+	KeywordIndex map[string][]string `json:"keywords"`
+}

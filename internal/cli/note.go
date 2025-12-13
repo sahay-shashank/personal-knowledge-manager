@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/sahay-shashank/personal-knownledge-manager/internal/note"
 )
@@ -28,7 +29,10 @@ func (noteCmd *NoteCommand) Run(args []string) error {
 		if err != nil {
 			return err
 		}
-		noteData := note.NewNote(noteArgs[0], content)
+		if content == "" {
+			return errors.New("no content")
+		}
+		noteData := note.NewNote(strings.Join(noteArgs, " "), content)
 		if err := noteCmd.store.Save(noteData); err != nil {
 			return err
 		}

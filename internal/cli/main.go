@@ -28,6 +28,7 @@ func NewCli() {
 		&NoteCommand{Cli: &cli},
 		&LinkCommand{Cli: &cli},
 		&TagCommand{Cli: &cli},
+		&SearchCommand{Cli: &cli},
 	}
 	for _, cmd := range commands {
 		if cmd.Name() == cmdName {
