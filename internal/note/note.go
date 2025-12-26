@@ -33,7 +33,7 @@ func (n *Note) RemoveLink(targetID string) error {
 	if index == -1 {
 		return errors.New(targetID + "link not found")
 	}
-	n.Links = slices.Delete(n.Links, index, index)
+	n.Links = slices.Delete(n.Links, index, index+1)
 	return nil
 }
 
@@ -51,19 +51,20 @@ func (n *Note) AddTag(tagList string) error {
 }
 
 func (n *Note) RemoveTag(tagList string) error {
-	// If note tag not found in n.Tags list return error else remove
 	tags := strings.Split(strings.ToLower(tagList), ",")
-	indexes := []int{}
+	var indexes []int
 	for _, tag := range tags {
-		index := slices.Index(n.Tags, strings.ToLower(tag))
+		tag = strings.TrimSpace(tag) // trim whitespace
+		index := slices.Index(n.Tags, tag)
 		if index == -1 {
-			return errors.New(tag + "tag not found")
+			return errors.New("tag not found")
 		}
-		indexes = append(indexes, slices.Index(n.Tags, strings.ToLower(tag)))
+		indexes = append(indexes, index)
 	}
 
-	for _, index := range indexes {
-		n.Tags = slices.Delete(n.Tags, index, index)
+	// Delete in reverse order to avoid index shifting
+	for i := len(indexes) - 1; i >= 0; i-- {
+		n.Tags = slices.Delete(n.Tags, indexes[i], indexes[i]+1)
 	}
 	return nil
 }

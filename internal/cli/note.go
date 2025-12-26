@@ -2,20 +2,29 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/sahay-shashank/personal-knownledge-manager/internal/note"
+	"github.com/sahay-shashank/personal-knowledge-manager/internal/crypt"
+	"github.com/sahay-shashank/personal-knowledge-manager/internal/note"
 )
 
 type NoteCommand struct {
 	*Cli
+	username    string
+	keyProvider *crypt.KeyProvider
 }
 
-func (noteCmd *NoteCommand) Name() string        { return "note" }
-func (noteCmd *NoteCommand) Description() string { return "CRUD commands for note" }
-func (noteCmd *NoteCommand) Help() string        { return "Help section for note" }
+func (noteCmd *NoteCommand) Name() string {
+	return "note"
+}
+
+func (noteCmd *NoteCommand) Description() string {
+	return "Create, read, edit, and delete encrypted notes"
+}
+
 func (noteCmd *NoteCommand) Run(args []string) error {
 	if len(args) < 1 {
 		noteCmd.Help()
@@ -25,6 +34,10 @@ func (noteCmd *NoteCommand) Run(args []string) error {
 	noteArgs := args[1:]
 	switch cmd {
 	case "new":
+		if len(noteArgs) < 1 {
+			return errors.New("usage: note new <title>")
+		}
+
 		content, err := tempEditor(nil)
 		if err != nil {
 			return err
@@ -33,11 +46,14 @@ func (noteCmd *NoteCommand) Run(args []string) error {
 			return errors.New("no content")
 		}
 		noteData := note.NewNote(strings.Join(noteArgs, " "), content)
-		if err := noteCmd.store.Save(noteData); err != nil {
-			return err
-		}
+		return noteCmd.store.Save(noteData, noteCmd.username, noteCmd.keyProvider)
+
 	case "edit":
-		noteData, err := noteCmd.store.Load(noteArgs[0])
+		if len(noteArgs) < 1 {
+			return errors.New("usage: note new <title>")
+		}
+
+		noteData, err := noteCmd.store.Load(noteArgs[0], noteCmd.username, noteCmd.keyProvider)
 		if err != nil {
 			return err
 		}
@@ -46,15 +62,23 @@ func (noteCmd *NoteCommand) Run(args []string) error {
 			return err
 		}
 		noteData.Content = newContent
-		if err := noteCmd.store.Save(noteData); err != nil {
-			return err
-		}
+		return noteCmd.store.Save(noteData, noteCmd.username, noteCmd.keyProvider)
+
 	case "delete":
-		if err := noteCmd.store.Delete(noteArgs[0]); err != nil {
-			return err
+		if len(noteArgs) < 1 {
+			return errors.New("usage: note delete <id>")
 		}
+		return noteCmd.store.Delete(noteArgs[0], noteCmd.username)
+
+	case "list":
+		// TODO: update to read from user directory and decrypt each note
+		return nil
+
 	case "help":
 		noteCmd.Help()
+
+	default:
+		return fmt.Errorf("unknown subcommand: %s", cmd)
 	}
 	return nil
 }

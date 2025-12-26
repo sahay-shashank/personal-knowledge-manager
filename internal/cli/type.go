@@ -1,6 +1,9 @@
 package cli
 
-import "github.com/sahay-shashank/personal-knownledge-manager/internal/note"
+import (
+	"github.com/sahay-shashank/personal-knowledge-manager/internal/crypt"
+	"github.com/sahay-shashank/personal-knowledge-manager/internal/note"
+)
 
 type Command interface {
 	Name() string
@@ -10,5 +13,7 @@ type Command interface {
 }
 
 type Cli struct {
-	store *note.Store
+	store       *note.Store
+	username    string
+	keyProvider *crypt.KeyProvider
 }

@@ -9,9 +9,14 @@ type SearchCommand struct {
 	*Cli
 }
 
-func (searchCmd *SearchCommand) Name() string        { return "search" }
-func (searchCmd *SearchCommand) Description() string { return "search commands for note" }
-func (searchCmd *SearchCommand) Help() string        { return "Help section for search" }
+func (searchCmd *SearchCommand) Name() string {
+	return "search"
+}
+
+func (searchCmd *SearchCommand) Description() string {
+	return "Search notes by keywords or tags"
+}
+
 func (searchCmd *SearchCommand) Run(args []string) error {
 	if len(args) < 1 {
 		searchCmd.Help()

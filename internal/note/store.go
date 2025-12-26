@@ -6,7 +6,10 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"slices"
+
+	"github.com/sahay-shashank/personal-knowledge-manager/internal/crypt"
 )
 
 func InitStore(storeDirectory string) *Store {
@@ -15,8 +18,43 @@ func InitStore(storeDirectory string) *Store {
 	}
 }
 
-func (fileStore *Store) Save(note *Note) error {
-	indexFileFS, err := os.OpenFile(fileStore.StoreLocation+"/"+".index.pkm", os.O_CREATE|os.O_RDWR, 0644)
+func (fileStore *Store) Save(note *Note, username string, kp *crypt.KeyProvider) error {
+	userdir := filepath.Join(fileStore.StoreLocation, username)
+	if err := os.MkdirAll(userdir, 0755); err != nil {
+		return err
+	}
+
+	jsonBody, err := json.Marshal(note)
+	if err != nil {
+		return err
+	}
+
+	encryptedBody, err := kp.Encrypt(jsonBody)
+	if err != nil {
+		return err
+	}
+	payload := []byte("PKM\n")
+	payload = append(payload, encryptedBody...)
+
+	noteFilePath := filepath.Join(userdir, note.Id+".pkm")
+	noteFileFS, err := os.OpenFile(noteFilePath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer noteFileFS.Close()
+
+	if err := noteFileFS.Truncate(0); err != nil {
+		return err
+	}
+	if _, err := noteFileFS.Seek(0, 0); err != nil {
+		return err
+	}
+	if _, err := noteFileFS.Write(payload); err != nil {
+		return err
+	}
+
+	indexFilePath := filepath.Join(userdir, ".index.pkm")
+	indexFileFS, err := os.OpenFile(indexFilePath, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return err
 	}
@@ -62,34 +100,13 @@ func (fileStore *Store) Save(note *Note) error {
 		return err
 	}
 
-	noteFileFS, err := os.OpenFile(fileStore.StoreLocation+"/"+note.Id+".pkm", os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer noteFileFS.Close()
-	jsonBody, err := json.Marshal(note)
-	if err != nil {
-		return err
-	}
-
-	payload := []byte("PKM\n")
-	payload = append(payload, jsonBody...)
-
-	if err := noteFileFS.Truncate(0); err != nil {
-		return err
-	}
-	if _, err := noteFileFS.Seek(0, 0); err != nil {
-		return err
-	}
-	if _, err := noteFileFS.Write(payload); err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func (fileStore *Store) Load(noteLocation string) (*Note, error) {
-	fileDataFS, err := os.OpenFile(fileStore.StoreLocation+"/"+noteLocation+".pkm", os.O_RDONLY, 0644)
+func (fileStore *Store) Load(noteLocation string, username string, kp *crypt.KeyProvider) (*Note, error) {
+	fileDataPath := filepath.Join(fileStore.StoreLocation, username, noteLocation+".pkm")
+
+	fileDataFS, err := os.OpenFile(fileDataPath, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, err
 	}
@@ -102,15 +119,21 @@ func (fileStore *Store) Load(noteLocation string) (*Note, error) {
 		return nil, errors.New("note corrupted")
 	}
 
+	encrpyted := fileData[4:]
+	jsonData, err := kp.Decrypt(encrpyted)
+	if err != nil {
+		return nil, err
+	}
 	note := Note{}
-	if err := json.Unmarshal(fileData[4:], &note); err != nil {
+	if err := json.Unmarshal(jsonData, &note); err != nil {
 		return nil, err
 	}
 	return &note, nil
 }
 
-func (fileStore *Store) Delete(noteLocation string) error {
-	return os.Remove(fileStore.StoreLocation + "/" + noteLocation + ".pkm")
+func (fileStore *Store) Delete(noteLocation string, username string) error {
+	fileLoc := filepath.Join(fileStore.StoreLocation, username, noteLocation+".pkm")
+	return os.Remove(fileLoc)
 }
 
 func (fileStore *Store) Search(searchType string, terms []string) ([]string, error) {
