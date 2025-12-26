@@ -1,0 +1,44 @@
+version: 3
+
+silent: true
+
+tasks:
+  test-all:
+    desc: Run tests for all
+    summary: |
+      Run every tests listed under "test" directory
+    cmds:
+    - go test ./...
+  
+  build:
+    desc: Build binary
+    summary: |
+      Build personal-knowledge-manager (pkm) binary in "build" directory
+    deps:
+    - clean
+    cmds:
+    - |
+      {{- if .arch }}
+      GOARCH={{ .arch }}
+      {{- end }}
+      {{- if .os }}
+      GOOS={{ .os }}
+      {{- end }}
+      go mod tidy
+      go build -o build/pkm{{- if eq .os "windows" }}.exe{{- end }} cmd/pkm/pkm.go
+
+  clean:
+    desc: Clean
+    cmds:
+    - go clean
+
+  coverage:
+    desc: Test coverage report
+    summary: |
+      Generate go test coverage report
+    cmds:
+    - |
+      t=$(date +"%Y-%m-%d-%T")
+      mkdir -p reports
+      go test ./... -coverprofile=reports/coverage_${t}.out
+      go tool cover -func=reports/coverage_${t}.out
