@@ -25,7 +25,7 @@ tasks:
       GOOS={{ .os }}
       {{- end }}
       go mod tidy
-      go build -o build/pkm{{- if eq .os "windows" }}.exe{{- end }} cmd/pkm/pkm.go
+      go build -o build/pkm{{- if eq .os "windows" }}.exe{{- end }} cmd/pkm/main.go
 
   clean:
     desc: Clean
