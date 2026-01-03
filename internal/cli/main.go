@@ -69,7 +69,7 @@ func NewCli() {
 	}
 
 	commands := []Command{
-		&NoteCommand{Cli: &cli, username: *username, keyProvider: keyProvider},
+		&NoteCommand{Cli: &cli},
 		&LinkCommand{Cli: &cli},
 		&TagCommand{Cli: &cli},
 		&SearchCommand{Cli: &cli},

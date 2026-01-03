@@ -6,15 +6,13 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"text/tabwriter"
 
-	"github.com/sahay-shashank/personal-knowledge-manager/internal/crypt"
 	"github.com/sahay-shashank/personal-knowledge-manager/internal/note"
 )
 
 type NoteCommand struct {
 	*Cli
-	username    string
-	keyProvider *crypt.KeyProvider
 }
 
 func (noteCmd *NoteCommand) Name() string {
@@ -71,8 +69,7 @@ func (noteCmd *NoteCommand) Run(args []string) error {
 		return noteCmd.store.Delete(noteArgs[0], noteCmd.username)
 
 	case "list":
-		// TODO: update to read from user directory and decrypt each note
-		return nil
+		return noteCmd.printList()
 
 	case "help":
 		noteCmd.Help()
@@ -113,4 +110,36 @@ func tempEditor(content *string) (string, error) {
 		return "", err
 	}
 	return string(newContent), nil
+}
+
+func (noteCmd *NoteCommand) printList() error {
+	noteSummaryList, err := noteCmd.store.List(noteCmd.username, noteCmd.keyProvider)
+	if len(noteSummaryList) == 0 {
+		fmt.Println("No Notes found!")
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	maxUID, maxTitle, maxTags := 3, 5, 4
+	for _, s := range noteSummaryList {
+		maxUID = max(maxUID, len(s.Id))
+		maxTitle = max(maxTitle, len(s.Title))
+		maxTags = max(maxTags, len(strings.Join(s.Tags, ",")))
+	}
+
+	dashUID := strings.Repeat("-", maxUID)
+	dashTitle := strings.Repeat("-", maxTitle)
+	dashTags := strings.Repeat("-", maxTags)
+	separator := fmt.Sprintf("%s\t%s\t%s", dashUID, dashTitle, dashTags)
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(w, "UID\tTITLE\tTAGS")
+	fmt.Fprintln(w, separator)
+	for _, noteSummary := range noteSummaryList {
+		tags := strings.Join(noteSummary.Tags, ",")
+		fmt.Fprintf(w, "%s\t%s\t%s\n", noteSummary.Id, noteSummary.Title, tags)
+	}
+
+	return w.Flush()
 }

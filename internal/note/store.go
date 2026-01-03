@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sort"
+	"strings"
 
 	"github.com/sahay-shashank/personal-knowledge-manager/internal/crypt"
 )
@@ -66,9 +68,13 @@ func (fileStore *Store) Save(note *Note, username string, kp *crypt.KeyProvider)
 	var index Index
 	index.KeywordIndex = make(map[string][]string)
 	index.TagIndex = make(map[string][]string)
-	if len(indexFile) > 0 {
-		if err := json.Unmarshal(indexFile, &index); err != nil {
-			return err
+	if len(indexFile) > 4 && bytes.Equal(indexFile[:4], []byte("PKM\n")) {
+		encryptedIndex := indexFile[4:]
+		decryptedIndex, err := kp.Decrypt(encryptedIndex)
+		if err == nil {
+			if err := json.Unmarshal(decryptedIndex, &index); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -85,10 +91,17 @@ func (fileStore *Store) Save(note *Note, username string, kp *crypt.KeyProvider)
 			index.TagIndex[tag] = append(index.TagIndex[tag], note.Id)
 		}
 	}
-	indexPayload, err := json.Marshal(index)
+	indexJson, err := json.Marshal(index)
 	if err != nil {
 		return err
 	}
+
+	encryptedIndex, err := kp.Encrypt(indexJson)
+	if err != nil {
+		return err
+	}
+	indexPayload := []byte("PKM\n")
+	indexPayload = append(indexPayload, encryptedIndex...)
 
 	if err := indexFileFS.Truncate(0); err != nil {
 		return err
@@ -115,7 +128,7 @@ func (fileStore *Store) Load(noteLocation string, username string, kp *crypt.Key
 	if err != nil {
 		return nil, err
 	}
-	if !bytes.Equal(fileData[:4], []byte("PKM\n")) {
+	if len(fileData) < 4 || !bytes.Equal(fileData[:4], []byte("PKM\n")) {
 		return nil, errors.New("note corrupted")
 	}
 
@@ -136,8 +149,9 @@ func (fileStore *Store) Delete(noteLocation string, username string) error {
 	return os.Remove(fileLoc)
 }
 
-func (fileStore *Store) Search(searchType string, terms []string) ([]string, error) {
-	fileDataFS, err := os.OpenFile(fileStore.StoreLocation+"/"+".index.pkm", os.O_RDONLY, 0644)
+func (fileStore *Store) Search(searchType string, terms []string, username string, kp *crypt.KeyProvider) ([]string, error) {
+	indexPath := filepath.Join(fileStore.StoreLocation, username, ".index.pkm")
+	fileDataFS, err := os.OpenFile(indexPath, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +160,17 @@ func (fileStore *Store) Search(searchType string, terms []string) ([]string, err
 	if err != nil {
 		return nil, err
 	}
+	if len(fileData) < 4 || !bytes.Equal(fileData[:4], []byte("PKM\n")) {
+		return nil, errors.New("index corrupted")
+	}
+
+	encrpyted := fileData[4:]
+	jsonData, err := kp.Decrypt(encrpyted)
+	if err != nil {
+		return nil, err
+	}
 	var index Index
-	if err := json.Unmarshal(fileData, &index); err != nil {
+	if err := json.Unmarshal(jsonData, &index); err != nil {
 		return nil, err
 	}
 
@@ -184,4 +207,72 @@ func intersect[T comparable](a []T, b []T) []T {
 		}
 	}
 	return result
+}
+
+func (fileStore *Store) List(username string, kp *crypt.KeyProvider) ([]NoteSummary, error) {
+
+	fileDirPath := filepath.Join(fileStore.StoreLocation, username)
+	fileDirFS, err := os.ReadDir(fileDirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var noteSummaryList []NoteSummary
+
+	for _, file := range fileDirFS {
+
+		if file.IsDir() {
+			continue
+		}
+		name := file.Name()
+
+		if !strings.HasSuffix(name, ".pkm") || name == ".index.pkm" {
+			continue
+		}
+
+		fileDataPath := filepath.Join(fileDirPath, name)
+		fileDataFS, err := os.OpenFile(fileDataPath, os.O_RDONLY, 0644)
+		if err != nil {
+			return nil, err
+		}
+
+		fileData, err := io.ReadAll(fileDataFS)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := fileDataFS.Close(); err != nil {
+			return nil, err
+		}
+
+		if len(fileData) < 4 || !bytes.Equal(fileData[:4], []byte("PKM\n")) {
+			// Skip corrupted notes
+			continue
+		}
+
+		encrpyted := fileData[4:]
+		jsonData, err := kp.Decrypt(encrpyted)
+		if err != nil {
+			// Skip notes that fail to decrypt
+			// continue
+			return nil, err
+		}
+
+		var note Note
+		if err := json.Unmarshal(jsonData, &note); err != nil {
+			return nil, err
+		}
+
+		noteSummaryList = append(noteSummaryList, NoteSummary{
+			Id:    note.Id,
+			Title: note.Title,
+			Tags:  note.Tags,
+		})
+	}
+
+	sort.Slice(noteSummaryList, func(i, j int) bool {
+		return noteSummaryList[i].Title < noteSummaryList[j].Title
+	})
+
+	return noteSummaryList, nil
 }

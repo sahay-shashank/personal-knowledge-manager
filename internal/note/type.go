@@ -21,3 +21,9 @@ type Index struct {
 	TagIndex     map[string][]string `json:"tags"`
 	KeywordIndex map[string][]string `json:"keywords"`
 }
+
+type NoteSummary struct {
+	Id    string   `json:"id"`
+	Title string   `json:"title"`
+	Tags  []string `json:"tags"`
+}

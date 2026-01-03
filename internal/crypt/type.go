@@ -9,7 +9,7 @@ const (
 
 type KeyProvider struct {
 	username string
-	dek []byte // in-memory DEK
+	dek      []byte // in-memory DEK
 
 }
 

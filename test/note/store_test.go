@@ -245,3 +245,131 @@ func TestUpdateNote(t *testing.T) {
 		t.Errorf("Content not updated: got %q", loaded.Content)
 	}
 }
+
+func TestListSorting(t *testing.T) {
+	tmpDir := t.TempDir()
+	store := note.InitStore(tmpDir)
+	username := "listtest"
+	password := "pass"
+	setupTestUser(t, tmpDir, username, password)
+	kp, _ := crypt.NewKeyProvider(tmpDir, username, password)
+
+	// Save unsorted notes
+	store.Save(&note.Note{Id: "z", Title: "Zebra"}, username, kp)
+	store.Save(&note.Note{Id: "a", Title: "Apple"}, username, kp)
+	store.Save(&note.Note{Id: "m", Title: "Monkey"}, username, kp)
+
+	summaries, err := store.List(username, kp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(summaries) != 3 {
+		t.Fatalf("want 3, got %d", len(summaries))
+	}
+	titles := []string{summaries[0].Title, summaries[1].Title, summaries[2].Title}
+	if titles[0] != "Apple" || titles[1] != "Monkey" || titles[2] != "Zebra" {
+		t.Errorf("want [Apple Monkey Zebra], got %v", titles)
+	}
+}
+
+func TestListSkipsNonPKM(t *testing.T) {
+	tmpDir := t.TempDir()
+	store := note.InitStore(tmpDir)
+	username := "skiptest"
+	password := "pass"
+	setupTestUser(t, tmpDir, username, password)
+	kp, _ := crypt.NewKeyProvider(tmpDir, username, password)
+
+	store.Save(&note.Note{Id: "valid", Title: "Valid"}, username, kp)
+
+	// Add junk files
+	junkPath := filepath.Join(tmpDir, username, "junk.txt")
+	os.WriteFile(junkPath, []byte("junk"), 0644)
+	dirPath := filepath.Join(tmpDir, username, "subdir")
+	os.Mkdir(dirPath, 0755)
+
+	summaries, err := store.List(username, kp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(summaries) != 1 {
+		t.Errorf("want 1 .pkm file only, got %d", len(summaries))
+	}
+}
+
+func TestListCorruptedHeader(t *testing.T) {
+	tmpDir := t.TempDir()
+	store := note.InitStore(tmpDir)
+	username := "corrupt"
+	password := "pass"
+	setupTestUser(t, tmpDir, username, password)
+	kp, _ := crypt.NewKeyProvider(tmpDir, username, password)
+
+	// Valid note
+	store.Save(&note.Note{Id: "good", Title: "Good"}, username, kp)
+
+	// Corrupted: wrong header
+	corruptPath := filepath.Join(tmpDir, username, "bad.pkm")
+	os.WriteFile(corruptPath, []byte("BAD\n..."), 0644)
+
+	summaries, err := store.List(username, kp)
+	if err != nil {
+		t.Errorf("want no error (corrupted file should be skipped), got %v", err)
+	}
+	// Still lists good notes
+	if len(summaries) != 1 || summaries[0].Title != "Good" {
+		t.Errorf("want 1 good summary, got %v", summaries)
+	}
+}
+
+func TestSearchNoIndex(t *testing.T) {
+	tmpDir := t.TempDir()
+	store := note.InitStore(tmpDir)
+	username := "searchtest"
+	password := "pass"
+	setupTestUser(t, tmpDir, username, password)
+	kp, _ := crypt.NewKeyProvider(tmpDir, username, password)
+
+	// Save some notes (creates index)
+	store.Save(&note.Note{Id: "n1", Title: "Go lang", Tags: []string{"go"}}, username, kp)
+
+	matches, err := store.Search("tag", []string{"rust"}, username, kp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 0 {
+		t.Errorf("want no matches for missing tag, got %v", matches)
+	}
+}
+
+func TestIndexUpdates(t *testing.T) {
+	tmpDir := t.TempDir()
+	store := note.InitStore(tmpDir)
+	username := "indextest"
+	password := "pass"
+	setupTestUser(t, tmpDir, username, password)
+	kp, _ := crypt.NewKeyProvider(tmpDir, username, password)
+
+	note1 := &note.Note{Id: "one", Title: "hello world", Tags: []string{"test"}}
+	store.Save(note1, username, kp)
+
+	// Check index created
+	indexPath := filepath.Join(tmpDir, username, ".index.pkm")
+	indexData, _ := os.ReadFile(indexPath)
+
+	// Decrypt the index
+	decryptedData, err := kp.Decrypt(indexData[4:]) // skip PKM header
+	if err != nil {
+		t.Fatalf("Failed to decrypt index: %v", err)
+	}
+
+	var idx note.Index
+	json.Unmarshal(decryptedData, &idx)
+
+	if len(idx.TagIndex["test"]) != 1 || idx.TagIndex["test"][0] != "one" {
+		t.Error("tag index not updated")
+	}
+	if len(idx.KeywordIndex["world"]) != 1 {
+		t.Error("keyword index not updated")
+	}
+}

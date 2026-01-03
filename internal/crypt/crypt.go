@@ -11,7 +11,7 @@ import (
 
 // ReadCryptFile reads .crypt file or returns empty CryptFile if not exists
 func ReadCryptFile(cryptPath string) (*CryptFile, error) {
-	
+
 	data, err := os.ReadFile(cryptPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {

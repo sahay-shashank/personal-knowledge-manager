@@ -29,7 +29,7 @@ func (searchCmd *SearchCommand) Run(args []string) error {
 	}
 	switch cmd {
 	case "keyword", "tag":
-		results, err := searchCmd.store.Search(cmd, linkArgs)
+		results, err := searchCmd.store.Search(cmd, linkArgs, searchCmd.username, searchCmd.keyProvider)
 		if err != nil {
 			return err
 		}

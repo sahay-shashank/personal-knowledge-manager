@@ -2,14 +2,10 @@ package cli
 
 import (
 	"errors"
-
-	"github.com/sahay-shashank/personal-knowledge-manager/internal/crypt"
 )
 
 type TagCommand struct {
 	*Cli
-	username    string
-	keyProvider *crypt.KeyProvider
 }
 
 func (tagCmd *TagCommand) Name() string {
@@ -32,25 +28,25 @@ func (tagCmd *TagCommand) Run(args []string) error {
 	}
 	switch cmd {
 	case "add":
-		noteData, err := tagCmd.store.Load(tagArgs[0], tagCmd.username, tagCmd.keyProvider)
+		noteData, err := tagCmd.Cli.GetStore().Load(tagArgs[0], tagCmd.Cli.GetUsername(), tagCmd.Cli.GetKeyProvider())
 		if err != nil {
 			return err
 		}
 		if err := noteData.AddTag(tagArgs[1]); err != nil {
 			return err
 		}
-		if err := tagCmd.store.Save(noteData, tagCmd.username, tagCmd.keyProvider); err != nil {
+		if err := tagCmd.Cli.GetStore().Save(noteData, tagCmd.Cli.GetUsername(), tagCmd.Cli.GetKeyProvider()); err != nil {
 			return err
 		}
 	case "delete":
-		noteData, err := tagCmd.store.Load(tagArgs[0], tagCmd.username, tagCmd.keyProvider)
+		noteData, err := tagCmd.Cli.GetStore().Load(tagArgs[0], tagCmd.Cli.GetUsername(), tagCmd.Cli.GetKeyProvider())
 		if err != nil {
 			return err
 		}
 		if err := noteData.RemoveTag(tagArgs[1]); err != nil {
 			return err
 		}
-		if err := tagCmd.store.Save(noteData, tagCmd.username, tagCmd.keyProvider); err != nil {
+		if err := tagCmd.Cli.GetStore().Save(noteData, tagCmd.Cli.GetUsername(), tagCmd.Cli.GetKeyProvider()); err != nil {
 			return err
 		}
 	case "help":
