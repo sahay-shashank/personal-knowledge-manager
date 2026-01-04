@@ -9,23 +9,41 @@ tasks:
       Run every tests listed under "test" directory
     cmds:
     - go test ./test/... -v
-  
+
   build:
     desc: Build binary
     summary: |
-      Build personal-knowledge-manager (pkm) binary in "build" directory
+      Build personal-knowledge-manager (pkm) binary for a single `os`/`arch`.
+      Provide `os` and `arch` when invoking the task (e.g. `task build os=linux arch=amd64`).
     deps:
     - clean
+    requires:
+      vars:
+      - name: os
+        enum: ["linux","darwin"]
+      - name: arch
+        enum: ["arm64","amd64"]
     cmds:
     - |
-      {{- if .arch }}
-      GOARCH={{ .arch }}
-      {{- end }}
-      {{- if .os }}
-      GOOS={{ .os }}
-      {{- end }}
+      set -e
       go mod tidy
-      go build -o build/pkm{{- if eq .os "windows" }}.exe{{- end }} cmd/pkm/main.go
+      echo "Building {{.os}}/{{.arch}}"
+      GOOS={{.os}} GOARCH={{.arch}} go build -o build/pkm-{{.os}}-{{.arch}} cmd/pkm/main.go
+
+  build-all:
+    desc: Cross-compile and package builds for linux and macOS
+    summary: |
+      Cross-compile `pkm` for OS/arch combinations from the Taskfile `vars`
+      and create tar.gz archives under `build/`.
+    cmds:
+    - for:
+        matrix:
+          OS: ["linux","darwin"]
+          ARCH: ["arm64","amd64"]
+      task: build
+      vars:
+        os: "{{ .ITEM.OS }}"
+        arch: "{{ .ITEM.ARCH }}"
 
   clean:
     desc: Clean
