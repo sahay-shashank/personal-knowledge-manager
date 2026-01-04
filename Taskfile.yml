@@ -3,12 +3,12 @@ version: 3
 silent: true
 
 tasks:
-  test-all:
-    desc: Run tests for all
+  test:
+    desc: Run tests
     summary: |
       Run every tests listed under "test" directory
     cmds:
-    - go test ./...
+    - go test ./test/... -v
   
   build:
     desc: Build binary
@@ -40,5 +40,5 @@ tasks:
     - |
       t=$(date +"%Y-%m-%d-%T")
       mkdir -p reports
-      go test ./... -coverprofile=reports/coverage_${t}.out
+      go test ./test/... -coverpkg=./internal/... -coverprofile=./reports/coverage_${t}.out
       go tool cover -func=reports/coverage_${t}.out

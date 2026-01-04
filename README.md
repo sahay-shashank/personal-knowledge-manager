@@ -10,7 +10,7 @@ A note-taking application written in Go designed to secure and syncronized acros
 - [x] Note Indexing for faster search
 - [x] Note Encryption on disk
 - [x] Multi-user system
-- [ ] Note Listing
+- [x] Note Listing
 - [ ] Multi-machine syncing system
 - [ ] Terminal User Interface
 
