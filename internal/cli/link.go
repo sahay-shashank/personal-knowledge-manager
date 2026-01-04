@@ -50,7 +50,7 @@ func (linkCmd *LinkCommand) Run(args []string) error {
 		if err := linkCmd.Cli.GetStore().Save(noteData2, linkCmd.Cli.GetUsername(), linkCmd.Cli.GetKeyProvider()); err != nil {
 			return err
 		}
-	case "delete":
+	case "delete","remove":
 		noteData1, err := linkCmd.Cli.GetStore().Load(linkArgs[0], linkCmd.Cli.GetUsername(), linkCmd.Cli.GetKeyProvider())
 		if err != nil {
 			return err

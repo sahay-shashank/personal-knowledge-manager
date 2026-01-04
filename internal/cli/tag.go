@@ -38,7 +38,7 @@ func (tagCmd *TagCommand) Run(args []string) error {
 		if err := tagCmd.Cli.GetStore().Save(noteData, tagCmd.Cli.GetUsername(), tagCmd.Cli.GetKeyProvider()); err != nil {
 			return err
 		}
-	case "delete":
+	case "delete","remove":
 		noteData, err := tagCmd.Cli.GetStore().Load(tagArgs[0], tagCmd.Cli.GetUsername(), tagCmd.Cli.GetKeyProvider())
 		if err != nil {
 			return err
