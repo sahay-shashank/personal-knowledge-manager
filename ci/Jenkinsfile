@@ -1,0 +1,127 @@
+pipeline {
+    agent {
+        dockerfile {
+            filename 'Dockerfile'
+            dir '.devcontainer'
+            label 'pkm-dev-image'
+        }
+    }
+
+    parameters {
+        string(name: 'GITHUB_OWNER', description: 'GitHub org or username')
+        string(name: 'GITHUB_REPO', description: 'GitHub repository name')
+        string(name: 'RELEASE_TAG', description: 'Release tag (e.g. v1.2.3)')
+        text(name: 'RELEASE_BODY', description: 'Release notes')
+    }
+
+    environment {
+        GITHUB_OWNER = "${params.GITHUB_OWNER}"
+        GITHUB_REPO  = "${params.GITHUB_REPO}"
+        RELEASE_TAG  = "${params.RELEASE_TAG}"
+        RELEASE_BODY = "${params.RELEASE_BODY}"
+        ARTIFACTS    = "build/pkm-*"
+    }
+
+    stages {
+
+        stage('Validate Parameters') {
+            steps {
+                script {
+                    def missing = []
+                    if (!params.GITHUB_OWNER?.trim()) missing << 'GITHUB_OWNER'
+                    if (!params.GITHUB_REPO?.trim())  missing << 'GITHUB_REPO'
+                    if (!params.RELEASE_TAG?.trim())  missing << 'RELEASE_TAG'
+                    if (!params.RELEASE_BODY?.trim()) missing << 'RELEASE_BODY'
+                    if (missing) {
+                        error "Missing required parameters: ${missing.join(', ')}"
+                    }
+                }
+            }
+        }
+
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        stage('Test') {
+            steps { sh 'task test' }
+        }
+
+        stage('Build') {
+            steps { sh 'task build-all' }
+        }
+
+        stage('Confirm Release') {
+            when {
+                allOf {
+                    branch 'main'
+                    not { buildingPR() }
+                }
+            }
+            steps {
+                input(
+                    message: "⚠️ Publish GitHub release '${RELEASE_TAG}'?",
+                    ok: "Publish"
+                )
+            }
+        }
+
+        stage('Create Release') {
+            when {
+                allOf {
+                    branch 'main'
+                    not { buildingPR() }
+                }
+            }
+            steps {
+                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                    sh '''
+                      curl -s -X POST \
+                        -H "Authorization: token $GITHUB_TOKEN" \
+                        -H "Content-Type: application/json" \
+                        https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases \
+                        -d '{
+                          "tag_name": "'"$RELEASE_TAG"'",
+                          "name": "Release '"$RELEASE_TAG"'",
+                          "body": "'"$RELEASE_BODY"'",
+                          "draft": false,
+                          "prerelease": false
+                        }' > release.json
+                    '''
+                }
+            }
+        }
+
+        stage('Upload Artifacts') {
+            when {
+                allOf {
+                    branch 'main'
+                    not { buildingPR() }
+                }
+            }
+            steps {
+                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                    sh '''
+                      set -e
+                      RELEASE_ID=$(jq -r '.id' release.json)
+
+                      FILES=$(ls $ARTIFACTS 2>/dev/null || true)
+                      if [ -z "$FILES" ]; then
+                        echo "No artifacts found"
+                        exit 1
+                      fi
+
+                      for file in $FILES; do
+                        echo "Uploading $file"
+                        curl -s -X POST \
+                          -H "Authorization: token $GITHUB_TOKEN" \
+                          -H "Content-Type: application/octet-stream" \
+                          --data-binary @"$file" \
+                          "https://uploads.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/$RELEASE_ID/assets?name=$(basename $file)"
+                      done
+                    '''
+                }
+            }
+        }
+    }
+}
