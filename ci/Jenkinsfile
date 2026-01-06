@@ -55,7 +55,7 @@ pipeline {
             when {
                 allOf {
                     branch 'main'
-                    not { buildingPR() }
+                    not { changeRequest() }
                 }
             }
             steps {
@@ -70,7 +70,7 @@ pipeline {
             when {
                 allOf {
                     branch 'main'
-                    not { buildingPR() }
+                    not { changeRequest() }
                 }
             }
             steps {
@@ -96,7 +96,7 @@ pipeline {
             when {
                 allOf {
                     branch 'main'
-                    not { buildingPR() }
+                    not { changeRequest() }
                 }
             }
             steps {
