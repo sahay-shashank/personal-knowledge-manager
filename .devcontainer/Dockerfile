@@ -1,4 +1,4 @@
-ARG VARIANT=3.16
+ARG VARIANT=2-1.25-trixie
 FROM mcr.microsoft.com/devcontainers/go:${VARIANT}
 
 ## Copy all the scripts
