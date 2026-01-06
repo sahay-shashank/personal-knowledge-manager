@@ -3,7 +3,6 @@ pipeline {
         dockerfile {
             filename 'Dockerfile'
             dir '.devcontainer'
-            label 'pkm-dev-image'
         }
     }
 
