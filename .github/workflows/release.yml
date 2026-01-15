@@ -15,7 +15,7 @@ jobs:
       with:
         runCmd: |
           echo "[INFO] DevContainer Ready"
-          echo "[INFO] "Running tasks to test, generate coverage report and build"
+          echo "[INFO] Running tasks to test, generate coverage report and build"
           task all || {
             echo "[ERROR] Failed to properly run the tasks"
             exit 1
