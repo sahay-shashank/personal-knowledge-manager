@@ -10,16 +10,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup DevContainer
-      uses: devcontainers/ci@v0.2
-      with:
-        runCmd: /bin/bash -c "echo DevContainer Ready"
-        # Optional: mount workspace folder
-        workspaceFolder: /workspace
-
-    - name: Build inside DevContainer
+    - name: Perform tasks inside DevContainer
       uses: devcontainers/ci@v0.2
       with:
         runCmd: |
-          cd /workspace
-          task all
+          echo "[INFO] DevContainer Ready"
+          echo "[INFO] "Running tasks to test, generate coverage report and build"
+          task all || {
+            echo "[ERROR] Failed to properly run the tasks"
+            exit 1
+          }
