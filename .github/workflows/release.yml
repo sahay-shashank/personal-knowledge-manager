@@ -13,6 +13,7 @@ jobs:
     - name: Perform tasks inside DevContainer
       uses: devcontainers/ci@v0.2
       with:
+        skipContainerUserIdUpdate: true
         runCmd: |
           set -e
           echo "[INFO] DevContainer Ready"
