@@ -16,6 +16,8 @@ jobs:
         skipContainerUserIdUpdate: true
         runCmd: |
           set -e
+          echo "[INFO] whoami: $(whoami)"
+          echo "[INFO] id (vscode): $(id vscode)"
           echo "[INFO] DevContainer Ready"
           echo "[INFO] Running tasks to test, generate coverage report and build"
           if ! task all; then
