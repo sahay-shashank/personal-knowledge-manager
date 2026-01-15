@@ -14,9 +14,10 @@ jobs:
       uses: devcontainers/ci@v0.2
       with:
         runCmd: |
+          set -e
           echo "[INFO] DevContainer Ready"
           echo "[INFO] Running tasks to test, generate coverage report and build"
-          task all || {
+          if ! task all; then
             echo "[ERROR] Failed to properly run the tasks"
             exit 1
-          }
+          fi
