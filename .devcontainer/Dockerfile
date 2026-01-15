@@ -8,3 +8,4 @@ COPY scripts/*.sh /tmp/scripts/
 ## Install taskfile
 #
 RUN bash /tmp/scripts/install_taskfile.sh
+USER vscode
