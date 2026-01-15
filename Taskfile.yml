@@ -7,11 +7,18 @@ tasks:
     desc: Run tests
     summary: |
       Run every tests listed under "test" directory
+    deps:
+    - clean
     cmds:
-    - go test ./test/... -v
+    - |
+      set -eou pipefail
+      go mod tidy
+      echo "[INFO] Testing test cases listed under \"test/\""
+      go test ./test/... -v
 
-  build:
+  build-per-os-and-arch:
     desc: Build binary
+    internal: true
     summary: |
       Build personal-knowledge-manager (pkm) binary for a single `os`/`arch`.
       Provide `os` and `arch` when invoking the task (e.g. `task build os=linux arch=amd64`).
@@ -25,22 +32,24 @@ tasks:
         enum: ["arm64","amd64"]
     cmds:
     - |
-      set -e
+      set -eou pipefail
       go mod tidy
-      echo "Building {{.os}}/{{.arch}}"
+      echo "[INFO] Building {{.os}}/{{.arch}}"
       GOOS={{.os}} GOARCH={{.arch}} go build -o build/pkm-{{.os}}-{{.arch}} cmd/pkm/main.go
 
-  build-all:
+  build:
     desc: Cross-compile and package builds for linux and macOS
     summary: |
       Cross-compile `pkm` for OS/arch combinations from the Taskfile `vars`
       and create tar.gz archives under `build/`.
+    deps:
+    - clean
     cmds:
     - for:
         matrix:
           OS: ["linux","darwin"]
           ARCH: ["arm64","amd64"]
-      task: build
+      task: build-per-os-and-arch
       vars:
         os: "{{ .ITEM.OS }}"
         arch: "{{ .ITEM.ARCH }}"
@@ -54,9 +63,23 @@ tasks:
     desc: Test coverage report
     summary: |
       Generate go test coverage report
+    deps:
+    - clean
     cmds:
     - |
+      set -eou pipefail
       t=$(date +"%Y-%m-%d-%T")
       mkdir -p reports
+      go mod tidy
+      echo "[INFO] Generating coverage report"
       go test ./test/... -coverpkg=./internal/... -coverprofile=./reports/coverage_${t}.out
       go tool cover -func=reports/coverage_${t}.out
+
+  all:
+    desc: Run test > converge > build
+    deps:
+    - clean
+    cmds:
+    - task: test
+    - task: coverage
+    - task: build

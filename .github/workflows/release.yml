@@ -1,0 +1,25 @@
+name: Go
+
+on:
+  workflow_dispatch: 
+
+jobs:
+
+  build:
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup DevContainer
+      uses: devcontainers/ci@v0.2
+      with:
+        runCmd: /bin/bash -c "echo DevContainer Ready"
+        # Optional: mount workspace folder
+        workspaceFolder: /workspace
+
+    - name: Build inside DevContainer
+      uses: devcontainers/ci@v0.2
+      with:
+        runCmd: |
+          cd /workspace
+          task all
