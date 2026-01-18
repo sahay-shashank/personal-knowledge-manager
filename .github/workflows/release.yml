@@ -10,6 +10,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Fix permissions
+      run: chmod -R u+rwX .
+
     - name: Perform tasks inside DevContainer
       uses: devcontainers/ci@v0.2
       with:
