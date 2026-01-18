@@ -8,15 +8,14 @@ jobs:
   build:
     runs-on: self-hosted
     steps:
-    # - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    # - name: Fix permissions
-    #   run: chmod -R u+rwX .
+    - name: Fix workspace ownership
+      run: sudo chown -R vscode:vscode $GITHUB_WORKSPACE
 
     - name: Perform tasks inside DevContainer
       uses: devcontainers/ci@v0.2
       with:
-        skipContainerUserIdUpdate: true
         noCache: true
         runCmd: |
           set -e
