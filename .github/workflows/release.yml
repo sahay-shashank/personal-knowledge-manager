@@ -8,10 +8,10 @@ jobs:
   build:
     runs-on: self-hosted
     steps:
-    - uses: actions/checkout@v4
+    # - uses: actions/checkout@v4
 
-    - name: Fix permissions
-      run: chmod -R u+rwX .
+    # - name: Fix permissions
+    #   run: chmod -R u+rwX .
 
     - name: Perform tasks inside DevContainer
       uses: devcontainers/ci@v0.2
