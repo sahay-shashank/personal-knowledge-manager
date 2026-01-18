@@ -16,6 +16,7 @@ jobs:
     - name: Perform tasks inside DevContainer
       uses: devcontainers/ci@v0.2
       with:
+        skipContainerUserIdUpdate: true
         noCache: true
         runCmd: |
           set -e
