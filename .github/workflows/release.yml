@@ -10,8 +10,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Fix workspace ownership
-      run: chown -R vscode:vscode $GITHUB_WORKSPACE
+    # - name: Fix workspace ownership
+    #   run: chown -R vscode:vscode $GITHUB_WORKSPACE
 
     - name: Perform tasks inside DevContainer
       uses: devcontainers/ci@v0.2
@@ -21,6 +21,7 @@ jobs:
           set -e
           echo "[INFO] whoami: $(whoami)"
           echo "[INFO] id (vscode): $(id vscode)"
+          echo "[INFO] id (root): $(id root)"
           ls -ltrhg
           echo "[INFO] DevContainer Ready"
           echo "[INFO] Running tasks to test, generate coverage report and build"
