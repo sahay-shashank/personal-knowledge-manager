@@ -1,6 +1,5 @@
 # Personal Knowledge Manager 📙
-A note-taking application written in Go designed to secure and syncronized across your terminals on multiple-machines.
-
+A terminal-first note-taking application written in Go, focused on secure storage, fast retrieval, and clean filesystem design.
 ## Features 🚀
 
 - [x] New Note Creation
