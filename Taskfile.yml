@@ -7,8 +7,6 @@ tasks:
     desc: Run tests
     summary: |
       Run every tests listed under "test" directory
-    deps:
-    - clean
     cmds:
     - |
       set -eou pipefail
@@ -22,8 +20,6 @@ tasks:
     summary: |
       Build personal-knowledge-manager (pkm) binary for a single `os`/`arch`.
       Provide `os` and `arch` when invoking the task (e.g. `task build os=linux arch=amd64`).
-    deps:
-    - clean
     requires:
       vars:
       - name: os
@@ -42,8 +38,6 @@ tasks:
     summary: |
       Cross-compile `pkm` for OS/arch combinations from the Taskfile `vars`
       and create tar.gz archives under `build/`.
-    deps:
-    - clean
     cmds:
     - for:
         matrix:
@@ -57,14 +51,13 @@ tasks:
   clean:
     desc: Clean
     cmds:
+    - rm -rf build/
     - go clean
 
   coverage:
     desc: Test coverage report
     summary: |
       Generate go test coverage report
-    deps:
-    - clean
     cmds:
     - |
       set -eou pipefail

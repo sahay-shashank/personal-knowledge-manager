@@ -1,0 +1,12 @@
+{
+    "name": "Go",
+    "build": {
+        "dockerfile": "../../.devcontainer/Dockerfile",
+        "args": {
+            "VARIANT": "2-1.25-trixie"
+        }
+    },
+    "containerUser": "root",
+    "remoteUser": "root",
+    "updateRemoteUserUID": true
+}

@@ -1,7 +1,17 @@
 name: Go
 
 on:
-  workflow_dispatch: 
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release"
+        required: true
+
+permissions:
+  contents: write
 
 jobs:
 
@@ -9,17 +19,49 @@ jobs:
     runs-on: self-hosted
     steps:
     - uses: actions/checkout@v4
+      # with:
+        # Get the workflow dispatch branch for dev container
+        # ref: ${{ github.ref_name }}
+        # path: .devcontainer
+        # Only fetch the minimal history
+        # fetch-depth: 1
+        # Only include .devcontainer folder
+        # sparse-checkout: |
+        #   .devcontainer/
 
-    - name: Setup DevContainer
-      uses: devcontainers/ci@v0.2
-      with:
-        runCmd: /bin/bash -c "echo DevContainer Ready"
-        # Optional: mount workspace folder
-        workspaceFolder: /workspace
+    # - name: Fix workspace ownership
+    #   run: chown -R vscode:vscode $GITHUB_WORKSPACE
 
-    - name: Build inside DevContainer
-      uses: devcontainers/ci@v0.2
+    - name: Perform tasks inside DevContainer
+      uses: devcontainers/ci@v0.3
       with:
+        noCache: true
+        configFile: .github/workflows/devcontainer.json
+        imageName: pkm
         runCmd: |
-          cd /workspace
-          task all
+          set -e
+          # BRANCH="${{ github.ref_name }}"
+
+          # echo "[INFO] Cleaning workspace"
+          # rm -rf ~/workspace
+
+          # echo "[INFO] Checking out branch: $BRANCH"          
+          # git clone --branch "$BRANCH" https://github.com/${{ github.repository }} ~/workspace
+
+          # cd ~/workspace
+    
+          echo "[INFO] DevContainer Ready"
+          
+          echo "[INFO] Running tasks to test, generate coverage report and build"
+          if ! task all; then
+            echo "[ERROR] Failed to properly run the tasks"
+            exit 1
+          fi
+
+    - name: Release Artifacts
+      uses: softprops/action-gh-release@v2
+      if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+      with:
+        tag_name: ${{ inputs.tag || github.ref_name }}
+        files: |
+          build/*
