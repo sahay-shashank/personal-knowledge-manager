@@ -41,6 +41,15 @@ func (userCmd *UserCommand) Run(args []string) error {
 		}
 		return userCmd.changePassword(subArgs[0])
 
+	case "export":
+		if len(subArgs) < 1 {
+			return errors.New("usage: user export <username>")
+		}
+		return userCmd.exportUser(subArgs[0])
+
+	case "import":
+		return userCmd.importUser()
+
 	default:
 		return fmt.Errorf("unknown subcommand: %s", subCmd)
 	}
@@ -76,5 +85,31 @@ func (userCmd *UserCommand) changePassword(username string) error {
 	}
 
 	fmt.Printf("✓ Password changed for %q\n", username)
+	return nil
+}
+
+func (userCmd *UserCommand) importUser() error {
+	userDataString, err := tempEditor(nil)
+	if err != nil {
+		return err
+	}
+
+	if err := crypt.ImportUser(userCmd.CLI.store.StoreLocation, userDataString); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (userCmd *UserCommand) exportUser(username string) error {
+	password, err := crypt.PromptPassword(fmt.Sprintf("Enter password for %q: ", username))
+	if err != nil {
+		return err
+	}
+
+	if err := crypt.ExportUser(userCmd.CLI.store.StoreLocation, username, password); err != nil {
+		return err
+	}
+
 	return nil
 }

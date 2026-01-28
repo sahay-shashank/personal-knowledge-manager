@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -242,4 +243,73 @@ func decryptAESGCM(key, nonce, ciphertext []byte) ([]byte, error) {
 
 func (kp *KeyProvider) GetDEK() []byte {
 	return kp.dek
+}
+
+// Export user profile from the current host
+func ExportUser(pkmDir, username, password string) error {
+	if password == "" {
+		return fmt.Errorf("Password required")
+	}
+
+	cryptPath := filepath.Join(pkmDir, ".crypt")
+
+	// Read .crypt
+	cf, err := ReadCryptFile(cryptPath)
+	if err != nil {
+		return err
+	}
+
+	entry := cf.FindEntry(username)
+	if entry == nil {
+		return fmt.Errorf("user not found")
+	}
+
+	// Validate user with password
+	if _, err := NewKeyProvider(pkmDir, username, password); err != nil {
+		return fmt.Errorf("Password incorrect: %w", err)
+	}
+
+	output, err := json.Marshal(entry)
+	fmt.Println(string(output))
+	return nil
+}
+
+// Import user profile to the current host
+func ImportUser(pkmDir, userData string) error {
+
+	entry := CryptEntry{}
+	if err := json.Unmarshal([]byte(userData), &entry); err != nil {
+		return err
+	}
+
+	if entry.Username == "" {
+		return fmt.Errorf("username not found in input")
+	}
+
+	cryptPath := filepath.Join(pkmDir, ".crypt")
+
+	// Read existing .crypt
+	cf, err := ReadCryptFile(cryptPath)
+	if err != nil {
+		return err
+	}
+
+	// Check if user already exists
+	if cf.FindEntry(entry.Username) != nil {
+		return fmt.Errorf("user %q already exists", entry.Username)
+	}
+	cf.AddOrUpdateEntry(entry)
+
+	// Write .crypt
+	if err := WriteCryptFile(cryptPath, cf); err != nil {
+		return err
+	}
+
+	// Create user directory
+	userDir := filepath.Join(pkmDir, entry.Username)
+	if err := os.MkdirAll(userDir, 0755); err != nil {
+		return err
+	}
+
+	return nil
 }

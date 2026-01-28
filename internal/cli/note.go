@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"text/tabwriter"
 
@@ -78,38 +77,6 @@ func (noteCmd *NoteCommand) Run(args []string) error {
 		return fmt.Errorf("unknown subcommand: %s", cmd)
 	}
 	return nil
-}
-
-func tempEditor(content *string) (string, error) {
-	tempFile, err := os.CreateTemp("", "pkm-*.md")
-	if err != nil {
-		return "", err
-	}
-	defer os.Remove(tempFile.Name())
-
-	if content != nil {
-		tempFile.WriteString(*content)
-	}
-
-	tempFile.Close()
-
-	editor := os.Getenv("EDITOR")
-	if editor == "" {
-		editor = "vi"
-	}
-	cmd := exec.Command(editor, tempFile.Name())
-	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	if err := cmd.Run(); err != nil {
-		return "", err
-	}
-
-	newContent, err := os.ReadFile(tempFile.Name())
-	if err != nil {
-		return "", err
-	}
-	return string(newContent), nil
 }
 
 func (noteCmd *NoteCommand) printList() error {
