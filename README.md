@@ -152,7 +152,3 @@ pkm is designed around these principles:
 
 Contributions, ideas, and feedback are welcome.
 Open an issue or submit a PR — even small improvements matter.
-
-## License 📜
-
-MIT License
