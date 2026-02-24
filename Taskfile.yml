@@ -26,12 +26,18 @@ tasks:
         enum: ["linux","darwin"]
       - name: arch
         enum: ["arm64","amd64"]
+    vars:
+      version: 
+        sh: git describe --tags --exact-match 2>/dev/null || git describe --tags --abbrev=0 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "dev"
+      commit:
+        sh: git rev-parse HEAD
     cmds:
     - |
       set -eou pipefail
       go mod tidy
       echo "[INFO] Building {{.os}}/{{.arch}}"
-      GOOS={{.os}} GOARCH={{.arch}} go build -o build/pkm-{{.os}}-{{.arch}} cmd/pkm/main.go
+      echo "[INFO] VERSION={{.version}} COMMIT={{.commit}}"
+      GOOS={{.os}} GOARCH={{.arch}} go build -ldflags="-X main.VERSION={{.version}} -X main.COMMIT={{.commit}}" -o build/pkm-{{.os}}-{{.arch}} cmd/pkm/main.go
 
   build:
     desc: Cross-compile and package builds for linux and macOS

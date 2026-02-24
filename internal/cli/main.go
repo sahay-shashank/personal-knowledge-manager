@@ -9,7 +9,7 @@ import (
 	"github.com/sahay-shashank/personal-knowledge-manager/internal/note"
 )
 
-func NewCli() {
+func NewCli(version, commit string) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v", err)
@@ -17,9 +17,16 @@ func NewCli() {
 
 	storeDir := flag.String("storeDirectory", homeDir+"/.pkm/", "Note Storage Directory")
 	username := flag.String("user", "", "Username (required)")
+	versionFlag := flag.Bool("v", false, "Print version")
+	versionLongFlag := flag.Bool("version", false, "Print version")
 
 	flag.Parse()
 
+	if *versionFlag || *versionLongFlag {
+		fmt.Println("PKM version:", version)
+		fmt.Println("PKM commitID:", commit)
+		return
+	}
 	commandArgs := flag.Args()
 	if len(commandArgs) < 1 {
 		globalHelp()
