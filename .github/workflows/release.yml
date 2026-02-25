@@ -38,6 +38,7 @@ jobs:
         noCache: true
         configFile: .github/workflows/devcontainer.json
         imageName: pkm
+        push: never
         runCmd: |
           set -e
           # BRANCH="${{ github.ref_name }}"
