@@ -1,0 +1,22 @@
+version: 3
+
+silent: true
+
+tasks:
+  build:all:
+    cmds:
+    - task: clean
+    - task: build:portfolio
+
+  build::
+    dir: portfolio
+    cmds:
+    - echo "[INFO] Installing Dependencies for portfolio"
+    - npm i
+    - echo "[INFO] Building Portfolio (serves /)"
+    - npm run prod
+    
+  clean:
+    cmds: 
+    - echo "[INFO] Removing build/"
+    - rm -rf build/

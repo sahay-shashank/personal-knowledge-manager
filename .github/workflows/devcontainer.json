@@ -1,0 +1,12 @@
+{
+    "name": "Portfolio",
+    "build": {
+        "dockerfile": "../../.devcontainer/Dockerfile",
+        "args": {
+            "VARIANT": "24-bookworm"
+        }
+    },
+    "containerUser": "root",
+    "remoteUser": "root",
+    "updateRemoteUserUID": true
+}

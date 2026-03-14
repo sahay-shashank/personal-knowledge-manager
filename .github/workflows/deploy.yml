@@ -1,0 +1,51 @@
+name: Build and Deploy on Github Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Clean dangling containers
+      run: |
+        set -e
+        if command -v docker >/dev/null 2>&1; then
+          echo "[INFO] Removing exited containers..."
+          docker container prune -f || true
+        else
+          echo "[ERROR] docker not available"
+          exit 1
+        fi
+
+    - name: Perform tasks inside DevContainer
+      uses: devcontainers/ci@v0.3
+      with:
+        noCache: true
+        configFile: .github/workflows/devcontainer.json
+        imageName: portfolio
+        push: never
+        runCmd: |
+          set -e
+    
+          echo "[INFO] DevContainer Ready"
+          
+          echo "[INFO] Running tasks to build all sites"
+          if ! task all; then
+            echo "[ERROR] Failed to properly run the tasks"
+            exit 1
+          fi
+
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build
+        publish_branch: gh-pages
