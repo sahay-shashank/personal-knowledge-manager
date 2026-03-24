@@ -19,7 +19,8 @@ FLAGS:
   --user <username>            Username (required for note operations)
   --storeDirectory <path>      Storage directory (default: ~/.pkm)
 
-COMMANDS:`)
+COMMANDS:
+`)
 
 	// Display commands with descriptions
 	commands := []struct {
@@ -70,6 +71,12 @@ USER COMMANDS:
     
   pkm user passwd <username>
     Change password for existing user
+
+  pkm user import
+    Import an user account
+  
+  pkm user export <username>
+    Export an user account
 
 NOTE COMMANDS:
 
@@ -218,6 +225,8 @@ USAGE:
 SUBCOMMANDS:
   init <username>         Create a new user account
   passwd <username>       Change password for existing user
+  import                  Import user account
+  export <username>       Export user account
   help                    Show this help message
 
 EXAMPLES:
