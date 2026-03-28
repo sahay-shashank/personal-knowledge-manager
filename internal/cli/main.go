@@ -15,12 +15,13 @@ func NewCli(version, commit string) {
 		fmt.Fprintf(os.Stderr, "Error: %v", err)
 	}
 
-	storeDir := flag.String("storeDirectory", homeDir+"/.pkm/", "Note Storage Directory")
 	username := flag.String("user", "", "Username (required)")
 	versionFlag := flag.Bool("v", false, "Print version")
 	versionLongFlag := flag.Bool("version", false, "Print version")
 
 	flag.Parse()
+
+	storeDir := homeDir + "/.pkm/"
 
 	if *versionFlag || *versionLongFlag {
 		fmt.Println("PKM version:", version)
@@ -39,13 +40,41 @@ func NewCli(version, commit string) {
 	// Special handling for 'user' commands (no password needed)
 	if cmdName == "user" {
 		cli := &Cli{
-			store:    note.InitStore(*storeDir),
+			store:    note.InitStore(storeDir),
 			username: "",
 		}
 		cmd := &UserCommand{CLI: cli}
 		if err := cmd.Run(args); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
+		}
+		return
+	}
+	if cmdName == "guide" {
+		helpGuide()
+		return
+	}
+	if cmdName == "help" {
+		if len(args) < 1 {
+			globalHelp()
+			return
+		}
+
+		cli := Cli{
+			store:    note.InitStore(storeDir),
+			username: "",
+		}
+		commands := []Command{
+			&NoteCommand{Cli: &cli},
+			&LinkCommand{Cli: &cli},
+			&TagCommand{Cli: &cli},
+			&SearchCommand{Cli: &cli},
+		}
+		for _, cmd := range commands {
+			if cmd.Name() == args[0] {
+				fmt.Println(cmd.Help())
+				break
+			}
 		}
 		return
 	}
@@ -63,14 +92,14 @@ func NewCli(version, commit string) {
 	}
 
 	// Initialize crypto with hardcoded DEK (for testing)
-	keyProvider, err := crypt.NewKeyProvider(*storeDir, *username, password)
+	keyProvider, err := crypt.NewKeyProvider(storeDir, *username, password)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Crypto init error: %v\n", err)
 		os.Exit(1)
 	}
 
 	cli := Cli{
-		store:       note.InitStore(*storeDir),
+		store:       note.InitStore(storeDir),
 		username:    *username,
 		keyProvider: keyProvider,
 	}

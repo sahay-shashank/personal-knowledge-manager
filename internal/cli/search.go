@@ -34,8 +34,8 @@ func (searchCmd *SearchCommand) Run(args []string) error {
 			return err
 		}
 		fmt.Printf("%s(s) found in %v", cmd, results)
-	case "help":
-		searchCmd.Help()
+	default:
+		return fmt.Errorf("unknown subcommand: %s", cmd)
 	}
 	return nil
 }

@@ -32,13 +32,16 @@ COMMANDS:
 		{"link", "Create and manage links between notes for knowledge discovery"},
 		{"tag", "Organize notes with tags for categorization and search"},
 		{"search", "Search notes by keywords or tags"},
-		{"help", "Show detailed help for a command"},
+		{"help", "Show detailed help for a command (help <command>)"},
+		{"guide", "Show a quick guide"},
 	}
 
 	for _, cmd := range commands {
 		fmt.Printf("  %-15s %s\n", cmd.name, cmd.desc)
 	}
+}
 
+func helpGuide() {
 	fmt.Print(`
 QUICK START:
 

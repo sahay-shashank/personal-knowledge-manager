@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 )
 
 type TagCommand struct {
@@ -38,7 +39,7 @@ func (tagCmd *TagCommand) Run(args []string) error {
 		if err := tagCmd.Cli.GetStore().Save(noteData, tagCmd.Cli.GetUsername(), tagCmd.Cli.GetKeyProvider()); err != nil {
 			return err
 		}
-	case "delete","remove":
+	case "delete", "remove":
 		noteData, err := tagCmd.Cli.GetStore().Load(tagArgs[0], tagCmd.Cli.GetUsername(), tagCmd.Cli.GetKeyProvider())
 		if err != nil {
 			return err
@@ -49,8 +50,8 @@ func (tagCmd *TagCommand) Run(args []string) error {
 		if err := tagCmd.Cli.GetStore().Save(noteData, tagCmd.Cli.GetUsername(), tagCmd.Cli.GetKeyProvider()); err != nil {
 			return err
 		}
-	case "help":
-		tagCmd.Help()
+	default:
+		return fmt.Errorf("unknown subcommand: %s", cmd)
 	}
 	return nil
 }

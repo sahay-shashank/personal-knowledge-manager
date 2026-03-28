@@ -70,13 +70,9 @@ func (noteCmd *NoteCommand) Run(args []string) error {
 	case "list":
 		return noteCmd.printList()
 
-	case "help":
-		noteCmd.Help()
-
 	default:
 		return fmt.Errorf("unknown subcommand: %s", cmd)
 	}
-	return nil
 }
 
 func (noteCmd *NoteCommand) printList() error {
